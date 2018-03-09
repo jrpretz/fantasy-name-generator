@@ -5,11 +5,25 @@ import sys
 import random
 import h5py
 
+alpha = 0.01
+
 Waa = tf.Variable(np.random.randn(50,50))
 Wax = tf.Variable(np.random.randn(50,29))
 Wya = tf.Variable(np.random.randn(29,50))
 b = tf.Variable(np.random.randn(50,1))
 by = tf.Variable(np.random.randn(29,1))
+
+dWaa = tf.placeholder(shape=(50,50),dtype=tf.float64)
+dWax = tf.placeholder(shape=(50,29),dtype=tf.float64)
+dWya = tf.placeholder(shape=(29,50),dtype=tf.float64)
+db = tf.placeholder(shape=(50,1),dtype=tf.float64)
+dby = tf.placeholder(shape=(29,1),dtype=tf.float64)
+
+update_Waa = tf.assign(Waa,Waa - alpha * dWaa)
+update_Wax = tf.assign(Wax,Wax - alpha * dWax)
+update_Wya = tf.assign(Wya,Wya - alpha * dWya)
+update_b = tf.assign(b,b - alpha * db)
+update_by = tf.assign(by,by - alpha * dby)
 
 infile = open("names.txt")
 
@@ -23,7 +37,7 @@ Zs = []
 costs = []
 
 trainers = []
-
+gradients = []
 #a_seed = tf.Variable(np.zeros(shape=(50,1)))
 #a_seed = tf.Variable(np.random.randn(50,1))
 #a_seed = tf.Variable(np.random.randn(50,1))
@@ -57,6 +71,8 @@ for i in range(0,max_depth):
     train_op = tf.train.GradientDescentOptimizer(0.01).minimize(costs[i])
     #train_op = tf.train.AdamOptimizer(0.001).minimize(costs[i])
     trainers.append(train_op)
+    grad = tf.gradients(costs[i],[Waa,Wax,Wya,b,by])
+    gradients.append(grad)
 
 index_to_char,char_to_index,encoded_words = encode_training_data("names.txt")
 
