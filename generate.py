@@ -63,8 +63,11 @@ def train_forward(network,a_prev,x,y,cache,depth):
 
 network = read_network("trained-weights-test.h5")
 
+
 a_prev = np.zeros(shape=(50,1))
 x_prev = np.zeros(shape=(29,1))
 
-s = sample_forward(network,a_prev,x_prev,0)
-print(s)
+for i in range(0,100):
+    s = sample_forward(network,a_prev,x_prev,0)
+    s = s[0].upper() + s[1:]
+    print(s)
