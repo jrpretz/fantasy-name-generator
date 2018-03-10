@@ -29,7 +29,7 @@ infile = open("names.txt")
 
 max_depth = 20
 
-Xs = []
+#Xs = []
 Ys = []
 Ypreds = []
 As = []
@@ -42,20 +42,19 @@ gradients = []
 #a_seed = tf.Variable(np.random.randn(50,1))
 #a_seed = tf.Variable(np.random.randn(50,1))
 a_seed = tf.constant(np.zeros(shape=(50,1)))
+x_seed = tf.constant(np.zeros(shape=(29,1)))
 
 for i in range(0,max_depth):
-    Xs.append(tf.placeholder(shape=(29,1),dtype=tf.float64,name="x%02d"%(i)))
+    Ys.append(tf.placeholder(shape=(29,1),dtype=tf.float64,name="x%02d"%(i)))
 
     if(i==0):
-        a = tf.nn.tanh(tf.matmul(Waa,a_seed)+tf.matmul(Wax,Xs[i]) + b)
+        a = tf.nn.tanh(tf.matmul(Waa,a_seed)+tf.matmul(Wax,x_seed) + b)
     else:
-        a = tf.nn.tanh(tf.matmul(Waa,As[i-1])+tf.matmul(Wax,Xs[i]) + b)
+        a = tf.nn.tanh(tf.matmul(Waa,As[i-1])+tf.matmul(Wax,Ys[i-1]) + b)
     As.append(a)
 
     z = tf.matmul(Wya,a) + by
     Zs.append(z)
-
-    Ys.append(tf.placeholder(shape=(29,1),dtype=tf.float64))
 
     y = tf.nn.softmax(z,dim=0)
 
@@ -68,14 +67,13 @@ for i in range(0,max_depth):
     else:
         costs.append(costs[i-1] +cost) 
 
-    train_op = tf.train.GradientDescentOptimizer(0.01).minimize(costs[i])
+    train_op = tf.train.MomentumOptimizer(0.001,momentum=0.9).minimize(costs[i])
     #train_op = tf.train.AdamOptimizer(0.001).minimize(costs[i])
     trainers.append(train_op)
     grad = tf.gradients(costs[i],[Waa,Wax,Wya,b,by])
     gradients.append(grad)
 
 index_to_char,char_to_index,encoded_words = encode_training_data("names.txt")
-
 
 with tf.Session() as session:
     session.run(tf.global_variables_initializer())
@@ -88,7 +86,7 @@ with tf.Session() as session:
         db_accumulate = np.zeros(shape=db.shape)
         dby_accumulate = np.zeros(shape=dby.shape)
 
-        nBatches = 5
+        nBatches = 10
 
         avgCost = 0.
         
@@ -99,20 +97,17 @@ with tf.Session() as session:
             word = encoded_words[selected_word]
 
             feed_dict = {}
-            for i in range(0,len(word)-1):
-                x = np.zeros(shape=(29,1))
-                x[word[i]] = 1.0
-
+            for i in range(0,len(word)):
                 y = np.zeros(shape=(29,1))
-                y[word[i+1]] = 1.0
+                y[word[i]] = 1.0
 
-                feed_dict[Xs[i]] = x
                 feed_dict[Ys[i]] = y
 
 
-            cost,grads = session.run([costs[len(word)-2],gradients[len(word)-2]],feed_dict=feed_dict)
-
-            avgCost += cost/(len(word)-1)
+            cost,grads = session.run([costs[len(word)-1],gradients[len(word)-1]],feed_dict=feed_dict)
+            #update,cost,grads = session.run([trainers[len(word)-1],costs[len(word)-1],gradients[len(word)-1]],feed_dict=feed_dict)
+            
+            avgCost += cost/(len(word))
 
             for i in range(0,5):
                 np.clip(grads[i],-5,5,grads[i])
@@ -122,7 +117,7 @@ with tf.Session() as session:
             dWya_accumulate += grads[2]
             db_accumulate += grads[3]
             dby_accumulate += grads[4]
-            #update,cost,grads = session.run([trainers[len(word)-2],costs[len(word)-2],gradients[len(word)-2]],feed_dict=feed_dict)
+
         print(epoch,avgCost/nBatches)
 
 
