@@ -47,9 +47,9 @@ for i in range(0,max_depth):
     Xs.append(tf.placeholder(shape=(29,1),dtype=tf.float64,name="x%02d"%(i)))
 
     if(i==0):
-        a = tf.tanh(tf.matmul(Waa,a_seed)+tf.matmul(Wax,Xs[i]) + b)
+        a = tf.nn.tanh(tf.matmul(Waa,a_seed)+tf.matmul(Wax,Xs[i]) + b)
     else:
-        a = tf.tanh(tf.matmul(Waa,As[i-1])+tf.matmul(Wax,Xs[i]) + b)
+        a = tf.nn.tanh(tf.matmul(Waa,As[i-1])+tf.matmul(Wax,Xs[i]) + b)
     As.append(a)
 
     z = tf.matmul(Wya,a) + by
@@ -80,27 +80,66 @@ index_to_char,char_to_index,encoded_words = encode_training_data("names.txt")
 with tf.Session() as session:
     session.run(tf.global_variables_initializer())
 
-    for epoch in range(0,100000):
-        selected_word = random.randint(0,len(encoded_words)-1)
+    for epoch in range(0,10000):
 
-        word = encoded_words[selected_word]
+        dWaa_accumulate = np.zeros(shape=dWaa.shape)
+        dWax_accumulate = np.zeros(shape=dWax.shape)
+        dWya_accumulate = np.zeros(shape=dWya.shape)
+        db_accumulate = np.zeros(shape=db.shape)
+        dby_accumulate = np.zeros(shape=dby.shape)
 
-        feed_dict = {}
-        for i in range(0,len(word)-1):
-            x = np.zeros(shape=(29,1))
-            x[word[i]] = 1.0
+        nBatches = 5
 
-            y = np.zeros(shape=(29,1))
-            y[word[i+1]] = 1.0
+        avgCost = 0.
+        
+        for batch in range(0,nBatches):
+        
+            selected_word = random.randint(0,len(encoded_words)-1)
 
-            feed_dict[Xs[i]] = x
-            feed_dict[Ys[i]] = y
+            word = encoded_words[selected_word]
+
+            feed_dict = {}
+            for i in range(0,len(word)-1):
+                x = np.zeros(shape=(29,1))
+                x[word[i]] = 1.0
+
+                y = np.zeros(shape=(29,1))
+                y[word[i+1]] = 1.0
+
+                feed_dict[Xs[i]] = x
+                feed_dict[Ys[i]] = y
 
 
-        update,cost = session.run([trainers[len(word)-2],costs[len(word)-2]],feed_dict=feed_dict)
-        print(epoch,cost/(len(word)-1))
+            cost,grads = session.run([costs[len(word)-2],gradients[len(word)-2]],feed_dict=feed_dict)
+
+            avgCost += cost/(len(word)-1)
+
+            for i in range(0,5):
+                np.clip(grads[i],-5,5,grads[i])
+            
+            dWaa_accumulate += grads[0]
+            dWax_accumulate += grads[1]
+            dWya_accumulate += grads[2]
+            db_accumulate += grads[3]
+            dby_accumulate += grads[4]
+            #update,cost,grads = session.run([trainers[len(word)-2],costs[len(word)-2],gradients[len(word)-2]],feed_dict=feed_dict)
+        print(epoch,avgCost/nBatches)
 
 
+        
+        dWaa_accumulate /= nBatches
+        dWax_accumulate /= nBatches
+        dWya_accumulate /= nBatches
+        db_accumulate /= nBatches
+        dby_accumulate /= nBatches
+
+        session.run(update_Waa,feed_dict={dWaa:dWaa_accumulate})
+        session.run(update_Wax,feed_dict={dWax:dWax_accumulate})
+        session.run(update_Wya,feed_dict={dWya:dWya_accumulate})
+        session.run(update_b,feed_dict={db:db_accumulate})
+        session.run(update_by,feed_dict={dby:dby_accumulate})
+
+        
     outfile = h5py.File("trained-weights-test.h5","w")
     outfile.create_dataset("Waa",data=session.run(Waa))
     outfile.create_dataset("Wax",data=session.run(Wax))
