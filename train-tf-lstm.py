@@ -103,7 +103,7 @@ index_to_char,char_to_index,encoded_words = encode_training_data("names.txt")
 with tf.Session() as session:
     session.run(tf.global_variables_initializer())
 
-    for epoch in range(0,10000):
+    for epoch in range(0,100000):
         
         selected_word = random.randint(0,len(encoded_words)-1)
 
@@ -126,13 +126,28 @@ with tf.Session() as session:
         #    print("-------------")
         #print(session.run(costs[len(word)-1],feed_dict=feed_dict))
 
-if False:
-    outfile = h5py.File("trained-weights-test.h5","w")
-    outfile.create_dataset("Waa",data=session.run(Waa))
-    outfile.create_dataset("Wax",data=session.run(Wax))
+
+    outfile = h5py.File("trained-weights-lstm.hd5","w")
+
+    outfile.create_dataset("Wca",data=session.run(Wca))
+    outfile.create_dataset("Wcx",data=session.run(Wcx))
+    outfile.create_dataset("bc",data=session.run(bc))
+
+    outfile.create_dataset("Wua",data=session.run(Wua))
+    outfile.create_dataset("Wux",data=session.run(Wux))
+    outfile.create_dataset("bu",data=session.run(bu))
+
+    outfile.create_dataset("Wfa",data=session.run(Wfa))
+    outfile.create_dataset("Wfx",data=session.run(Wfx))
+    outfile.create_dataset("bf",data=session.run(bf))
+
+    outfile.create_dataset("Woa",data=session.run(Woa))
+    outfile.create_dataset("Wox",data=session.run(Wox))
+    outfile.create_dataset("bo",data=session.run(bo))
+
     outfile.create_dataset("Wya",data=session.run(Wya))
-    outfile.create_dataset("b",data=session.run(b))
     outfile.create_dataset("by",data=session.run(by))
+
     charmap = []
     for i in range(0,len(index_to_char)):
         charmap.append(index_to_char[i])
