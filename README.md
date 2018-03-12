@@ -1,6 +1,10 @@
 # fantasy-name-generator
 Simple Recurrent Neural Network (RNN) to generate fantasy character names
 
+It is inspired by a homework from Andrew Ng's Deep Learning course
+(https://www.coursera.org/specializations/deep-learning), but this is
+wholly my own implementation. 
+
 The training set is from: 
 http://www.skatoolaki.com/eq/n_fantasynamegenerator.htm
 
